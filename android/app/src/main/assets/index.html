@@ -1,0 +1,221 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Ludo Prototype v12</title>
+<style>
+:root{--b1:#1c55c9;--b2:#0e3a99;--card:#fffdf8;--fg:#10224d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--b1:#123a8f;--b2:#071c4f;--card:#1d2a4a;--fg:#eef2ff}}
+:root[data-theme="dark"]{--b1:#123a8f;--b2:#071c4f;--card:#1d2a4a;--fg:#eef2ff}
+html{height:100%}
+body{margin:0;min-height:100%;color:#fff;font-family:"Trebuchet MS",system-ui,sans-serif;background:repeating-linear-gradient(45deg,rgba(255,255,255,.06) 0 16px,transparent 16px 32px),linear-gradient(160deg,var(--b1),var(--b2));background-attachment:fixed}
+#app{width:min(100%,520px);margin:0 auto;padding:8px;display:flex;flex-direction:column;gap:8px;box-sizing:border-box}
+#top{display:flex;align-items:center;gap:8px}#tb{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.2);overflow:hidden}#tf{height:100%;width:100%;background:#ffc800}
+#tn{font-weight:800;min-width:34px}#snd{border:0;background:rgba(0,0,20,.4);color:#fff;border-radius:10px;font-size:18px;padding:4px 10px}
+.pr{display:flex;gap:8px}
+.pn{flex:1;border-radius:14px;padding:6px 8px;background:rgba(0,0,20,.35);border:3px solid transparent;min-height:96px;display:flex;flex-direction:column;gap:3px;box-sizing:border-box;min-width:0}
+.pn.on{border-color:var(--c);background:rgba(0,0,20,.6);box-shadow:0 0 16px var(--c)}.pn.off{opacity:.3}
+.pn b{color:var(--c);font-size:16px}.pn small{font-size:11px;opacity:.9}
+.dc{display:flex;gap:8px;align-items:center;min-height:52px}
+.die{width:50px;height:50px;border-radius:11px;border:0;background:#fff;padding:0;display:block}.die svg{width:100%;height:100%;display:block}
+.die.used{opacity:.25}.die.sel{outline:4px solid var(--c);outline-offset:1px}
+.rb{padding:12px 16px;border-radius:12px;border:0;background:var(--c,#2a9d3f);color:#fff;font-weight:800;font-size:16px}
+canvas{width:100%;aspect-ratio:1;border-radius:14px;box-shadow:0 6px 22px rgba(0,0,0,.5);touch-action:manipulation;display:block}
+#msg{text-align:center;font-weight:700;min-height:44px}
+#ov{position:fixed;inset:0;background:rgba(0,0,20,.7);display:flex;align-items:center;justify-content:center;padding:16px}
+#box{background:var(--card);color:var(--fg);border-radius:16px;padding:20px;width:min(92vw,360px);display:flex;flex-direction:column;gap:12px}
+#box h2{margin:0;font-size:22px}.row{display:flex;gap:8px;margin-top:6px}
+.row button,#go{flex:1;padding:12px;border-radius:10px;border:2px solid #8aa0d6;background:transparent;color:var(--fg);font-size:16px;font-weight:700}
+.row button.on{background:#2457d6;border-color:#2457d6;color:#fff}.row button:disabled{opacity:.35}
+#go{background:#1fae4b;border-color:#1fae4b;color:#fff}
+#extraControls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+#extraControls button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;background:#ffc800;color:#17264c}
+#extraControls button:disabled{opacity:.35}
+#ruleNote{font-size:12px;opacity:.9;text-align:center}
+
+#lobby{position:fixed;inset:0;z-index:20;background:linear-gradient(160deg,var(--b1),var(--b2));display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+#lobbyBox{width:min(92vw,380px);background:var(--card);color:var(--fg);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 10px 35px #0006}
+#lobbyBox h1{margin:0;font-size:25px}#lobbyBox input,#lobbyBox select{box-sizing:border-box;width:100%;padding:12px;border:1px solid #9aaad0;border-radius:10px;font-size:16px;background:#fff;color:#14224a}
+#lobbyBox button{padding:12px;border:0;border-radius:10px;background:#2457d6;color:#fff;font-weight:800;font-size:16px}
+#lobbyBox button:disabled{opacity:.4}#lobbyBox .secondary{background:#1fae4b}#lobbyBox .hint{font-size:12px;opacity:.8;line-height:1.4}#roomCode{font-size:28px;font-weight:900;letter-spacing:5px;text-align:center;padding:8px;background:#e9efff;border-radius:10px;color:#17377f}
+#lobbyPlayers{display:flex;flex-direction:column;gap:6px}#lobbyPlayers div{padding:8px 10px;border-radius:8px;background:#eaf0ff;color:#17264c;font-weight:700}
+</style></head><body>
+<div id="lobby"><div id="lobbyBox">
+<h1>Ludo Darwesh</h1><div id="lobbyHome">
+<label>Your name</label><input id="playerName" maxlength="18" placeholder="Enter your name" value="Player">
+<label>Server URL</label><input id="serverUrl" placeholder="https://your-online-server.example">
+<label>Room size</label><select id="roomSize"><option value="2">2 Players</option><option value="3">3 Players</option><option value="4" selected>4 Players</option></select>
+<button id="createRoom">Create Online Room</button>
+<div style="text-align:center;font-weight:800">OR JOIN FRIEND</div>
+<input id="joinCode" maxlength="5" placeholder="5-character room code" style="text-transform:uppercase;text-align:center;letter-spacing:4px">
+<button id="joinRoom" class="secondary">Join Room</button>
+<div class="hint">Online play requires an internet-hosted Ludo Darwesh server. Keep this page open while playing.</div>
+</div>
+<div id="lobbyWait" style="display:none">
+<div style="font-weight:800">Room Code</div><div id="roomCode">-----</div>
+<div id="roomStatus">Waiting for players...</div><div id="lobbyPlayers"></div>
+<button id="startOnline" class="secondary" style="display:none">Start Game</button>
+<button id="leaveRoom">Leave Room</button>
+</div><div id="lobbyError" class="hint" role="status"></div>
+</div></div><div id="app">
+<div id="top"><span id="tn">60s</span><div id="tb"><div id="tf"></div></div><button id="snd">🔊</button></div>
+<div class="pr"><div class="pn" id="pn0"></div><div class="pn" id="pn1"></div></div>
+<canvas id="cv"></canvas>
+<div class="pr"><div class="pn" id="pn3"></div><div class="pn" id="pn2"></div></div>
+<div id="extraControls"></div><div id="ruleNote">Friends Ludo Custom Rules · Double = 12 steps (6 + 6), split between two tokens or used by the same token · Double = extra turn · Capture = extra turn · If all tokens are in the home lane, roll only 1 die · When all 4 tokens reach the center, give your dice number to another player · If another player finishes all 4 tokens and you have never captured, you lose · If you could capture but do not, that token returns to start · Entering the home lane = extra turn</div><div id="msg"></div></div>
+<div id="ov" style="display:none"><div id="box"><h2>Ludo Prototype</h2>
+<div><b>Players</b><div class="row" id="np"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4" class="on">4</button></div></div>
+<div><b>Mode</b><div class="row" id="md"><button data-v="single" class="on">Single</button><button data-v="team" id="tm">Partnership</button></div></div>
+<div style="font-size:12px;text-align:left;max-height:36vh;overflow:auto;line-height:1.55"><b>Rules</b><br>
+• Roll 2 dice per turn. Double = 12 steps (6 + 6) and an extra turn<br>
+• Roll a 6 to bring a token out of the base<br>
+• Capture = extra turn. ★ spaces are safe. Capture is required to unlock the home lane<br>
+• Entering the home lane = extra turn<br>
+• If you have a chance to capture but do not take it, that token returns to start<br>
+• If all your tokens are in the home lane, roll only 1 die<br>
+• When all 4 tokens reach the center, give your 1-die number to another player<br>
+• If all 4 tokens reach the final stretch (50) without a capture, or all opponents finish, you lose without a capture</div>
+<button id="go">Start game</button></div></div>
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+<script>
+const COL=['#e0197d','#1fae4b','#ffc800','#2457d6'],NM=['Pink','Green','Yellow','Blue'];
+let netSocket=null,netRoom=null,netPlayers=[],netHost=false,mySeat=-1,netLaunching=false,applyingRemote=false;
+const netEnabled=()=>!!(netSocket&&netSocket.connected&&netRoom);
+function lobbyError(msg){$('lobbyError').textContent=msg||''}
+function paintLobby(room){netPlayers=room.players||[];if(room.code)netRoom=room.code;const me=netPlayers.findIndex(p=>p.id===netSocket.id);if(me>=0)mySeat=me;netHost=room.hostId===netSocket.id;$('lobbyHome').style.display='none';$('lobbyWait').style.display='flex';$('roomCode').textContent=room.code;$('roomStatus').textContent=room.status==='playing'?'Game started':'Players: '+netPlayers.length+'/'+room.maxPlayers;$('lobbyPlayers').innerHTML=netPlayers.map((p,i)=>`<div>${i+1}. ${p.name} · ${p.color}${p.id===room.hostId?' · HOST':''}</div>`).join('');$('startOnline').style.display=netHost?'block':'none';$('startOnline').disabled=netPlayers.length<2||room.status==='playing';if(room.status==='playing')launchOnlineGame()}
+function connectOnline(){if(typeof io==='undefined'){lobbyError('Socket client could not load. Check your internet connection.');return false}if(!netSocket){const endpoint=$('serverUrl').value.trim()||((location.protocol==='http:'||location.protocol==='https:')?location.origin:'');if(!endpoint){lobbyError('Enter your public server URL first.');return false}netSocket=io(endpoint,{transports:['websocket','polling']});netSocket.on('connect',()=>lobbyError('Connected to server.'));netSocket.on('connect_error',()=>lobbyError('Cannot reach server. Server must be hosted publicly.'));netSocket.on('room:update',paintLobby);netSocket.on('game:snapshot',snap=>{if(netHost||!snap)return;applySnapshot(snap)});netSocket.on('game:action',msg=>{if(!netHost||!msg||!msg.action)return;if(msg.playerIndex!==cur)return;const a=msg.action;if(a.type==='roll'&&phase==='roll')doRoll();else if(a.type==='move'&&phase==='move'&&opts().some(o=>o.d===a.d&&o.i===a.i))play(a.d,a.i);else if(a.type==='give'&&phase==='give'&&donees().includes(a.target))give(a.target)})}return true}
+function sendAction(action){if(netEnabled())netSocket.emit('game:action',{code:netRoom,action})}
+function launchOnlineGame(){if(netLaunching||started)return;netLaunching=true;$('lobby').style.display='none';np=netPlayers.length;mode='single';NM.forEach((_,i)=>{if(netPlayers[i])NM[i]=netPlayers[i].name});start()}
+function packSnapshot(){return {np,mode,act,t,cap,hasCaptured,fin,cur,dice,used,sel,over,busy,phase,deadline,extra,note,started,lastSec,turnCaptured,lockedTokens,combined,doubleMode,pairRemaining,donorReady,donorWaiting,elim,everOut,lostMsg,donorSeat,penMsg,preS,penal,turnMsg,extraWhy}}
+function applySnapshot(x){if(!x||netHost)return;applyingRemote=true;np=x.np;mode=x.mode;act=x.act;t=x.t;cap=x.cap;hasCaptured=x.hasCaptured;fin=x.fin;cur=x.cur;dice=x.dice;used=x.used;sel=x.sel;over=x.over;busy=x.busy;phase=x.phase;deadline=x.deadline;extra=x.extra;note=x.note;started=x.started;lastSec=x.lastSec;turnCaptured=x.turnCaptured;lockedTokens=x.lockedTokens;combined=x.combined;doubleMode=x.doubleMode;pairRemaining=x.pairRemaining;donorReady=x.donorReady;donorWaiting=x.donorWaiting;elim=x.elim;everOut=x.everOut;lostMsg=x.lostMsg;donorSeat=x.donorSeat;penMsg=x.penMsg;preS=x.preS;penal=x.penal;turnMsg=x.turnMsg;extraWhy=x.extraWhy;$('lobby').style.display='none';$('ov').style.display='none';render();applyingRemote=false}
+
+const SEG=[[1,6,1,0,5],[6,5,0,-1,6],[7,0,1,0,2],[8,1,0,1,5],[9,6,1,0,6],[14,7,0,1,2],[13,8,-1,0,5],[8,9,0,1,6],[7,14,-1,0,2],[6,13,0,-1,5],[5,8,-1,0,6],[0,7,0,-1,2]];
+const RING=[];SEG.forEach(([x,y,dx,dy,n])=>{for(let i=0;i<n;i++)RING.push([x+dx*i,y+dy*i])});
+let extraWhy='';
+const SAFE=new Set([0,13,26,39,8,21,34,47]),YO=[[0,0],[9,0],[9,9],[0,9]],YB=[[2,2],[4,2],[2,4],[4,4]];
+const hc=(p,j)=>[[1+j,7],[7,1+j],[13-j,7],[7,13-j]][p];
+const $=id=>document.getElementById(id),cv=$('cv'),cx=cv.getContext('2d');
+let np=4,mode='single',act=[0,1,2,3],t=[0,1,2,3].map(()=>[-1,-1,-1,-1]),cap=[0,0,0,0].map(()=>false),hasCaptured=[false,false,false,false],fin=[],cur=0,dice=null,used=[false,false],sel=0,over=false,busy=false,phase='roll',deadline=0,extra=false,note='',started=false,S=300,mute=false,lastSec=0,turnCaptured=false,lockedTokens=[false,false,false,false],combined=false,doubleMode=false,pairRemaining=0,donorReady=[false,false,false,false],donorWaiting=[false,false,false,false],elim=[],everOut=[false,false,false,false],lostMsg='',donorSeat=null,penMsg='',preS=-1,penal=[false,false,false,false],turnMsg='';
+const team=p=>mode==='team'?p%2:p,R6=()=>1+Math.floor(Math.random()*6);
+if(location.protocol==='http:'||location.protocol==='https:')$('serverUrl').value=location.origin;
+$('createRoom').onclick=()=>{lobbyError('');if(!connectOnline())return;const name=$('playerName').value.trim()||'Player';netSocket.emit('room:create',{name,maxPlayers:+$('roomSize').value},r=>{if(!r||!r.ok){lobbyError(r?.error||'Could not create room.');return}paintLobby(r.room)})};
+$('joinRoom').onclick=()=>{lobbyError('');if(!connectOnline())return;const name=$('playerName').value.trim()||'Player',code=$('joinCode').value.trim().toUpperCase();if(code.length!==5){lobbyError('Enter the 5-character room code.');return}netSocket.emit('room:join',{name,code},r=>{if(!r||!r.ok){lobbyError(r?.error||'Could not join room.');return}paintLobby(r.room)})};
+$('startOnline').onclick=()=>{if(!netSocket||!netRoom)return;netSocket.emit('room:start',{code:netRoom},r=>{if(!r||!r.ok)lobbyError(r?.error||'Could not start game.')})};
+$('leaveRoom').onclick=()=>{if(netSocket)netSocket.disconnect();location.reload()};
+/* sound */
+let ac;const A=()=>{if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(ac&&ac.state==='suspended')ac.resume();return ac};
+function tone(f,d,ty,v,t0,f2){const a=A();if(!a||mute)return;const o=a.createOscillator(),g=a.createGain(),s=a.currentTime+(t0||0);o.type=ty||'sine';o.frequency.setValueAtTime(f,s);if(f2)o.frequency.exponentialRampToValueAtTime(f2,s+d);g.gain.setValueAtTime(v||.15,s);g.gain.exponentialRampToValueAtTime(.001,s+d);o.connect(g);g.connect(a.destination);o.start(s);o.stop(s+d)}
+const SFX={tick:()=>tone(520,.07,'triangle',.12),rattle:()=>{for(let i=0;i<7;i++)tone(160+Math.random()*220,.05,'square',.06,i*.09)},hit:()=>tone(320,.4,'sawtooth',.16,0,60),open:()=>{tone(660,.1,'sine',.15);tone(990,.16,'sine',.15,.09)},home:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.15,i*.09)),win:()=>[523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,.25,'triangle',.18,i*.13)),six:()=>tone(880,.2,'sine',.14,0,1320),warn:()=>tone(1000,.06,'square',.08)};
+/* dice svg */
+const PIP={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const die=v=>`<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="9" fill="#fff"/>${PIP[v].map(i=>`<circle cx="${12+(i%3)*12}" cy="${12+Math.floor(i/3)*12}" r="4.2" fill="${v===1?'#e0197d':'#14224a'}"/>`).join('')}</svg>`;
+/* Friends Ludo custom rules */
+const stepS=(p,s)=>s+1;
+const legal=(p,i,n)=>{const s=t[p][i];if(s>=56)return false;if(s<0)return n===6;if(!cap[p]&&s+n>50)return false;return s+n<=56};
+const opts=()=>{const o=[];if(!dice)return o;
+ if(doubleMode){if(pairRemaining>0)for(let i=0;i<4;i++)if(!lockedTokens[i]&&legal(cur,i,6))o.push({d:3,i});return o}
+ [0,1].forEach(d=>{if(!used[d])for(let i=0;i<4;i++)if(!lockedTokens[i]&&legal(cur,i,dice[d]))o.push({d,i})});
+ /* Combined movement is only for tokens already on the board; it never opens a token. */
+ if(!used[0]&&!used[1])for(let i=0;i<4;i++)if(!lockedTokens[i]&&t[cur][i]>=0&&legal(cur,i,dice[0]+dice[1]))o.push({d:2,i});return o};
+const willCapture=(p,i,n)=>{const s=t[p][i];if(s<0||s>50||s+n>50)return false;const k=(p*13+s+n)%52;if(SAFE.has(k))return false;return act.some(q=>team(q)!==team(p)&&t[q].some(m=>m>=0&&m<=50&&(q*13+m)%52===k))};
+const movables=()=>(phase!=='move'||busy||over||!dice)?[]:[0,1,2,3].filter(i=>opts().some(o=>o.i===i&&o.d===sel));
+function pos(p,i){const s=t[p][i];if(s<0){const b=YB[i];return[b[0]+YO[p][0]+.5,b[1]+YO[p][1]+.5]}
+ if(s<=50){const r=RING[(p*13+s)%52];return[r[0]+.5,r[1]+.5]}
+ if(s<56){const h=hc(p,s-51);return[h[0]+.5,h[1]+.5]}
+ return[7.5+[-.7,0,.7,0][p]+(i-1.5)*.1,7.5+[0,-.7,0,.7][p]+(i-1.5)*.1]}
+function startTurn(p,m){extraWhy='';penal=[false,false,false,false];cur=p;phase='roll';dice=null;used=[false,false];lockedTokens=[false,false,false,false];extra=false;combined=false;doubleMode=false;pairRemaining=0;turnCaptured=false;busy=false;lastSec=0;deadline=Date.now()+60000;note=(turnMsg?turnMsg+'<br>':'')+(m||NM[p]+': roll the dice.');turnMsg='';render()}
+function endTurn(){if(over)return;
+ {const pk=[0,1,2,3].filter(k=>penal[k]);if(pk.length){pk.forEach(k=>t[cur][k]=-1);turnMsg=NM[cur]+': could have captured but did not, so that token returns to start!';render()}penal=[false,false,false,false]}
+ if(donorSeat!==null){const s=donorSeat,ex=extra;donorSeat=null;extra=false;cur=s;if(ex){startTurn(s,'Capture bonus! '+NM[s]+', roll the dice again.');return}}
+ /* Bonus turn belongs to the same player only for a matching pair (1-1 through 6-6) or a capture. A single 6 is not a bonus turn. */
+ if(extra&&!fin.includes(cur)&&!elim.includes(cur)){startTurn(cur,(extraWhy||'Extra turn!')+' '+NM[cur]+', roll the dice again.');return}
+ let k=act.indexOf(cur),tries=0;do{k=(k+1)%act.length;tries++}while(tries<=act.length&&elim.includes(act[k]));startTurn(act[k])}
+function doRoll(){if(netEnabled()&&!netHost){if(mySeat===cur&&phase==='roll')sendAction({type:'roll'});return}if(phase!=='roll'||busy||over)return;busy=true;SFX.rattle();let n=0;const fn=fin.includes(cur),one=fn||t[cur].every(v=>v>=51);const iv=setInterval(()=>{dice=one?[R6(),null]:[R6(),R6()];used=one?[false,true]:[false,false];render();if(++n>7){clearInterval(iv);phase='move';doubleMode=dice[1]!==null&&dice[0]===dice[1];pairRemaining=doubleMode?2:0;extra=doubleMode;if(extra)SFX.six();
+ if(fn){if(!donees().length){busy=false;render();setTimeout(endTurn,900);return}phase='give';busy=false;note=NM[cur]+': '+dice[0]+' was rolled. Which player should receive this number?';render();return}
+ const o=opts();if(!o.length){note=`${NM[cur]}: ${one?dice[0]+' rolled (1 die only)':dice[0]+' and '+dice[1]+' rolled'}, no legal moves available.`;render();setTimeout(endTurn,1500);return}
+ sel=o[0].d;note=doubleMode?`Double ${dice[0]}-${dice[1]}! 12 steps = 6 + 6. Use each 6 on a different token or the same token.`:one?`All tokens are in the home lane, so roll only 1 die: ${dice[0]} rolled.`:`${dice[0]} + ${dice[1]} rolled. Select a die; A combined move of ${dice[0]+dice[1]} is also available.`;busy=false;render();autoOne()}},90)}
+function autoOne(){const o=opts();if(o.length===1){const c=o[0];busy=true;setTimeout(()=>{busy=false;if(phase==='move'&&!over)play(c.d,c.i)},550)}}
+function play(d,i){if(netEnabled()&&!netHost){if(mySeat===cur&&phase==='move')sendAction({type:'move',d,i});return}if(busy||phase!=='move'||over)return;
+ /* Capture obligation: when a die is spent on a different token, any token that
+    could have captured with that exact die becomes unavailable for the rest of this turn.
+    The other die remains available until it too is spent. */
+ if(!doubleMode){
+   const mvN=d===2?dice[0]+dice[1]:dice[d];const selfCaps=t[cur][i]>=0&&willCapture(cur,i,mvN);const spentDice = selfCaps ? [] : (d===2 ? [0,1] : [d]);
+   const avail=[];if(dice[1]==null)avail.push(dice[0]);else{if(!used[0])avail.push(dice[0]);if(!used[1])avail.push(dice[1]);if(!used[0]&&!used[1])avail.push(dice[0]+dice[1])}
+   const stepList=selfCaps?[]:avail;
+   for(const steps of stepList){
+     for(let tokenIndex=0;tokenIndex<4;tokenIndex++){
+       if(tokenIndex===i || penal[tokenIndex]) continue;
+       if(legal(cur,tokenIndex,steps) && willCapture(cur,tokenIndex,steps)){
+         penal[tokenIndex]=true;
+       }
+     }
+   }
+ }
+ busy=true;combined=d===2;if(doubleMode){if(pairRemaining<=0)return;pairRemaining--;}else if(d===2){used=[true,true]}else used[d]=true;sel=d;const p=cur,n=doubleMode?6:(combined?dice[0]+dice[1]:dice[d]);preS=t[p][i];
+ if(t[p][i]<0){t[p][i]=0;everOut[p]=true;SFX.open();note='Token is out! You can now use the other die too.';render();setTimeout(()=>{busy=false;fm(p,i)},350);return}
+ let k=0;const iv=setInterval(()=>{t[p][i]=stepS(p,t[p][i]);SFX.tick();if(++k>=n){clearInterval(iv);setTimeout(()=>fm(p,i),150)}},85);render()}
+const donees=()=>act.filter(q=>!elim.includes(q)&&!fin.includes(q));
+function give(q){if(netEnabled()&&!netHost){if(mySeat===cur&&phase==='give')sendAction({type:'give',target:q});return}if(phase!=='give'||over)return;const f=cur,v=dice[0];donorSeat=f;cur=q;dice=[v,null];used=[false,true];lockedTokens=[false,false,false,false];phase='move';deadline=Date.now()+60000;lastSec=0;sel=0;note=NM[f]+' gave '+NM[q]+' the number '+v+'.';const o=opts();if(!o.length){note+=' No legal moves available.';render();setTimeout(endTurn,1500);return}render();autoOne()}
+function checkNoCapture(){const lost=[];if(over)return lost;lostMsg='';
+ const alive=act.filter(q=>!elim.includes(q));
+ /* Once a player has finished all four gotis, every opposing player
+    who has never captured is immediately eliminated. */
+ if(fin.length){
+  for(const p of alive){
+   if(fin.includes(p)||hasCaptured[p])continue;
+   const finishedOpponent=fin.some(q=>act.includes(q)&&team(q)!==team(p));
+   if(finishedOpponent){lost.push(p);if(mode!=='team'){elim.push(p);t[p]=[-1,-1,-1,-1]}}
+  }
+ }
+ if(lost.length){lostMsg=lost.map(p=>NM[p]).join(' + ')+' has never captured and cannot win, so '+(mode==='team'?'team':'that player')+' has lost! ❌';note=lostMsg}
+ return lost}
+function fm(p,i){const s=t[p][i];let hit=false;if(penMsg){note=penMsg;penMsg=''}
+ if(s>=0&&s<=50&&!SAFE.has((p*13+s)%52)){const k=(p*13+s)%52;act.forEach(q=>{if(team(q)!==team(p))t[q].forEach((m,j)=>{if(m>=0&&m<=50&&(q*13+m)%52===k){t[q][j]=-1;hit=true}})})}
+ /* If every token of an opponent has been sent back to base, their capture-earned home-lane unlock resets. */
+ act.forEach(q=>{if(team(q)!==team(p)&&t[q].every(m=>m===-1))cap[q]=false});
+ if(hit){penal[i]=false;cap[p]=true;hasCaptured[p]=true;turnCaptured=true;extra=true;extraWhy='Capture bonus!';SFX.hit();note='Token captured! You get an extra turn. The home lane is now unlocked.'}else if(s===56){SFX.home();note='Token reached the center!'}
+ if(preS>=51&&s===56){extra=true;extraWhy='Token completed!';if(!hit)note='Exact finishing number rolled! You get an extra turn.'}
+ if(t[p].every(v=>v===56)&&!fin.includes(p)){fin.push(p);note=NM[p]+' has finished all 4 tokens! 🎉 On its turn, it gets 1 die to give to another player.'}
+ const lostNow=checkNoCapture();let w;if(mode==='team'){w=[0,1].find(g=>act.filter(q=>q%2===g).every(q=>fin.includes(q)));if(w===undefined&&lostNow.length)w=1-lostNow[0]%2}else{const rem=donees();if(rem.length<=1&&(fin.length||rem.length===1))w=fin.length?fin[0]:rem[0]}
+ if(w!==undefined){over=true;SFX.win();note=`🏆 ${mode==='team'?'Team '+(w?'Green + Blue':'Pink + Yellow'):NM[w]} jeet gaya!${lostMsg?'<br>'+lostMsg:''}<br><button class="rb" onclick="location.reload()">New game</button>`;render();return}
+ if(lostNow.includes(p)){extra=false;busy=false;render();setTimeout(endTurn,1800);return}
+ if(doubleMode&&pairRemaining>0){const more=opts();if(more.length){sel=3;busy=false;note='One 6-step move remains. Choose another token or move this token 6 more steps.';render();autoOne();return}}
+ const o=opts();if(!o.length||doubleMode&&pairRemaining===0){busy=false;render();setTimeout(endTurn,700);return}
+ sel=o[0].d;busy=false;render();autoOne()}
+function hits(p,n,s){let x=s<0?0:s;for(let k=0;k<n&&s>=0;k++)x=stepS(p,x);let h=0;if(x<=50&&!SAFE.has((p*13+x)%52))act.forEach(q=>{if(team(q)!==team(p))t[q].forEach(m=>{if(m>=0&&m<=50&&(q*13+m)%52===(p*13+x)%52)h++})});return[x,h]}
+function auto(){if(phase==='roll'){doRoll();return}if(phase==='give'){const d=donees();if(d.length)give(d[Math.floor(Math.random()*d.length)]);return}const o=opts();if(!o.length)return;let b=o[0],bs=-1;o.forEach(c=>{const s=t[cur][c.i],n=doubleMode?6:(c.d===2?dice[0]+dice[1]:dice[c.d]),[x,h]=hits(cur,n,s);const sc=h*100+(x===56?60:0)+(s<0?30:0)+x*.1;if(sc>bs){bs=sc;b=c}});play(b.d,b.i)}
+/* ui */
+function render(){[0,1,2,3].forEach(p=>{const e=$('pn'+p),on=act.includes(p)&&!elim.includes(p),a=started&&p===cur&&!over;e.style.setProperty('--c',COL[p]);e.className='pn'+(on?'':' off')+(a?' on':'');
+ const h=t[p].filter(v=>v===56).length;let dc='';
+ if(a){dc=dice?dice.map((v,d)=>v==null?'':`<button class="die${doubleMode?(pairRemaining===0?' used':''):(used[d]?' used':'')}${phase==='move'&&(doubleMode?sel===3:sel===d)&&(!doubleMode||pairRemaining>0)?' sel':''}" data-d="${d}">${die(v)}</button>`).join(''):'<button class="rb">🎲 Roll</button>'}
+ e.innerHTML=`<b>${NM[p]}</b>${mode==='team'&&on?` <small>Team ${'AB'[p%2]}</small>`:''}<small>${on?'Color '+h+'/4 · Capture '+(cap[p]?'✔':'✘'):(elim.includes(p)?'Lost ❌':'')}</small><div class="dc">${dc}</div>`});
+ $('msg').innerHTML=note;const ec=$('extraControls');ec.innerHTML='';if(started&&phase==='give'&&!over){donees().forEach(q=>{const b=document.createElement('button');b.textContent=NM[q]+' the number';b.onclick=()=>give(q);ec.appendChild(b)})}if(started&&phase==='move'&&dice&&!over){if(doubleMode){const b=document.createElement('button');b.textContent='Double Six: '+pairRemaining+' × 6 remaining';b.disabled=pairRemaining===0;b.onclick=()=>{sel=3;render()};ec.appendChild(b);if(sel===3)b.style.outline='3px solid white'}else if(dice[1]!=null){const b=document.createElement('button');b.textContent='Combined move: '+(dice[0]+dice[1]);b.disabled=used[0]||used[1];b.onclick=()=>{sel=2;render()};ec.appendChild(b);if(sel===2)b.style.outline='3px solid white'}}}
+$('app').addEventListener('click',e=>{A();if(netEnabled()&&!netHost&&mySeat!==cur)return;if(e.target.closest('.rb')&&!over){doRoll();return}const b=e.target.closest('.die');
+ if(b&&phase==='move'&&!busy&&!over){const d=+b.dataset.d;if(doubleMode){if(pairRemaining>0){sel=3;render()}}else if(!used[d]){sel=d;render()}}});
+cv.addEventListener('click',e=>{A();if(netEnabled()&&!netHost&&mySeat!==cur)return;const m=movables();if(!m.length)return;const r=cv.getBoundingClientRect(),u=r.width/15,x=(e.clientX-r.left)/u,y=(e.clientY-r.top)/u;
+ let best=-1,bd=.9;m.forEach(i=>{const[a,b]=pos(cur,i),d=Math.hypot(a-x,b-y);if(d<bd){bd=d;best=i}});if(best>=0)play(doubleMode?3:sel,best)});
+$('snd').onclick=()=>{mute=!mute;$('snd').textContent=mute?'🔇':'🔊';A()};if(netEnabled()&&netHost&&started&&!applyingRemote)netSocket.emit('game:snapshot',{code:netRoom,snapshot:packSnapshot()});
+function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+function rs(){const d=devicePixelRatio||1;S=cv.clientWidth||300;cv.width=cv.height=Math.round(S*d);cx.setTransform(d,0,0,d,0,0)}
+function draw(ts){const u=S/15;cx.clearRect(0,0,S,S);cx.fillStyle='#fff';rr(0,0,S,S,u*.6);cx.fill();
+ for(let p=0;p<4;p++){cx.globalAlpha=act.includes(p)&&!elim.includes(p)?1:.3;cx.fillStyle=COL[p];rr(YO[p][0]*u+u*.1,YO[p][1]*u+u*.1,5.8*u,5.8*u,u*.5);cx.fill();
+  cx.fillStyle='#fff';rr((YO[p][0]+1)*u,(YO[p][1]+1)*u,4*u,4*u,u*.4);cx.fill();
+  YB.forEach(b=>{cx.beginPath();cx.arc((b[0]+YO[p][0]+.5)*u,(b[1]+YO[p][1]+.5)*u,u*.42,0,7);cx.fillStyle=COL[p]+'55';cx.fill();cx.strokeStyle=COL[p];cx.lineWidth=2;cx.stroke()});cx.globalAlpha=1}
+ cx.strokeStyle='#cfcfcf';cx.lineWidth=1;
+ RING.forEach(([x,y],k)=>{const sp=k%13===0;cx.fillStyle=sp?COL[k/13]:'#fff';cx.fillRect(x*u,y*u,u,u);cx.strokeRect(x*u,y*u,u,u);
+  if(SAFE.has(k)&&!sp){cx.fillStyle='#8a8a8a';cx.font=u*.7+'px sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('★',(x+.5)*u,(y+.55)*u)}});
+ for(let p=0;p<4;p++)for(let j=0;j<5;j++){const h=hc(p,j);cx.fillStyle=COL[p];cx.fillRect(h[0]*u,h[1]*u,u,u);cx.strokeRect(h[0]*u,h[1]*u,u,u)}
+ [[6,6,9,6,1],[9,6,9,9,2],[6,9,9,9,3],[6,6,6,9,0]].forEach(([a,b,e,f,p])=>{cx.fillStyle=COL[p];cx.beginPath();cx.moveTo(a*u,b*u);cx.lineTo(e*u,f*u);cx.lineTo(7.5*u,7.5*u);cx.fill()});
+ const mv=movables(),pl=.5+.5*Math.sin(ts/170),seen={};
+ act.filter(p=>!elim.includes(p)).forEach(p=>t[p].forEach((s,i)=>{let[x,y]=pos(p,i);const k=Math.round(x*2)+','+Math.round(y*2)+s,n=seen[k]=(seen[k]||0)+1;x+=(n-1)*.14;y-=(n-1)*.14;
+  const ok=p===cur&&mv.includes(i),r=u*(s===56?.2:.34);
+  cx.beginPath();cx.arc(x*u+1.5,y*u+2.5,r,0,7);cx.fillStyle='rgba(0,0,0,.3)';cx.fill();
+  cx.beginPath();cx.arc(x*u,y*u,r,0,7);cx.fillStyle=COL[p];cx.fill();cx.lineWidth=2.5;cx.strokeStyle='#fff';cx.stroke();
+  cx.beginPath();cx.arc(x*u-r*.25,y*u-r*.25,r*.35,0,7);cx.fillStyle='rgba(255,255,255,.45)';cx.fill();
+  if(ok){cx.beginPath();cx.arc(x*u,y*u,r+3+pl*4,0,7);cx.strokeStyle='#111';cx.lineWidth=3;cx.stroke()}}))}
+function tick(){if(!started||over)return;if(netEnabled()&&!netHost){const l=Math.max(0,deadline-Date.now());$('tf').style.width=l/600+'%';$('tn').textContent=Math.ceil(l/1000)+'s';return}const l=Math.max(0,deadline-Date.now());$('tf').style.width=l/600+'%';$('tn').textContent=Math.ceil(l/1000)+'s';
+ const sc=Math.ceil(l/1000);if(l>0&&l<=5000&&sc!==lastSec){lastSec=sc;SFX.warn()}if(l===0&&!busy)auto()}
+function loop(ts){draw(ts);tick();requestAnimationFrame(loop)}
+function start(){A();act=netRoom?[0,1,2,3].slice(0,np):(np===2?[0,2]:np===3?[0,1,2]:[0,1,2,3]);t=[0,1,2,3].map(()=>[-1,-1,-1,-1]);cap=[false,false,false,false];hasCaptured=[false,false,false,false];fin=[];elim=[];donorSeat=null;everOut=[false,false,false,false];lostMsg='';donorReady=[false,false,false,false];donorWaiting=[false,false,false,false];over=false;started=true;$('ov').style.display='none';startTurn(act[0],'Game started! '+NM[act[0]]+', roll the dice.')}
+const tg=(sel,fn)=>document.querySelectorAll(sel+' button').forEach(b=>b.onclick=()=>{fn(b);document.querySelectorAll(sel+' button').forEach(x=>x.classList.toggle('on',x===b))});
+tg('#np',b=>{np=+b.dataset.v;$('tm').disabled=np<4;if(np<4){mode='single';document.querySelectorAll('#md button').forEach(x=>x.classList.toggle('on',x.dataset.v==='single'))}});
+tg('#md',b=>{mode=b.dataset.v});$('go').onclick=start;
+addEventListener('resize',rs);rs();render();requestAnimationFrame(loop);
+</script></body></html>
